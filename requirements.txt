@@ -1,3 +1,4 @@
+openai-agents>=0.2.2
 fastapi>=0.104.1
 uvicorn[standard]>=0.24.0
 pdfplumber>=0.11.7
@@ -12,3 +13,4 @@ googlesearch-python>=1.2.3
 validators>=0.22.0
 aiohttp>=3.9.0
 langdetect>=1.0.9
+sentence-transformers

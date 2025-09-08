@@ -1,0 +1,72 @@
+
+# # # specialist/radiology_ai.py
+# # from agents import Agent, Tool
+
+# # def create_radiology_agent(model):
+# #     return Agent(
+# #         name="RadiologyAI",
+# #         instructions="""
+# #         You are a radiology expert AI specializing in medical imaging analysis. Analyze symptoms or imaging descriptions (e.g., abnormal x-ray, CT scan findings) and suggest possible conditions, further imaging, or specialists. Use vector search to find similar cases. Provide JSON responses with:
+# #         - summary: Brief overview of the analysis
+# #         - detailed_analysis: Detailed medical insights based on symptoms and similar cases
+# #         - recommendations: Actions, tests, or specialist referrals (e.g., consult a radiologist)
+# #         - disclaimer: "This information is for educational purposes only. Consult a healthcare professional for medical advice."
+# #         - type: "radiology"
+# #         Ensure responses are concise, medically accurate, and include actionable advice.
+# #         """,
+# #         model=model,
+# #         tools=[Tool(name="vector_search", function="search_similar_symptoms")]
+# #     )
+
+
+# # specialist/radiology_ai.py
+# from agents import Agent, Tool
+# # from main import search_similar_cases  # Import the actual function
+
+# def create_radiology_agent(model):
+#     from main import search_similar_cases
+#     # Define the tool function that wraps your search function
+#     def vector_search_tool(query: str, specialty: str = "radiology") -> list:
+#         """Search for similar radiology cases and symptoms"""
+#         return search_similar_cases(query, specialty)
+    
+#     return Agent(
+#         name="RadiologyAI",
+#         instructions="""
+#         You are a radiology expert AI specializing in medical imaging analysis. Analyze symptoms or imaging descriptions (e.g., abnormal x-ray, CT scan findings) and suggest possible conditions, further imaging, or specialists. Use vector search to find similar cases. Provide JSON responses with:
+#         - summary: Brief overview of the analysis
+#         - detailed_analysis: Detailed medical insights based on symptoms and similar cases
+#         - recommendations: Actions, tests, or specialist referrals (e.g., consult a radiologist)
+#         - disclaimer: "This information is for educational purposes only. Consult a healthcare professional for medical advice."
+#         - type: "radiology"
+#         Ensure responses are concise, medically accurate, and include actionable advice.
+#         """,
+#         model=model,
+#         tools=[Tool(
+#             name="vector_search",
+#             description="Search for similar radiology cases and symptoms",
+#             function=vector_search_tool  # Pass the actual function, not a string
+#         )]
+#     )
+
+
+
+from agents import Agent
+
+def create_radiology_agent(model):
+    return Agent(
+        name="MedicuraRadiologySpecialistAgent",
+        instructions="""
+You are a specialized radiology agent.
+You provide medical insights and explanations related to:
+- Imaging techniques: X-ray, CT scan, MRI, Ultrasound
+- Interpretation of scans for bones, organs, and tissues
+- Common findings, abnormalities, and diagnostic insights
+- Recommendations for further tests or specialist referrals
+
+RETURN PURE JSON ONLY with these exact fields:
+summary, detailed_analysis, recommendations, key_points, disclaimer, type.
+NO OTHER TEXT.
+        """,
+        model=model,
+    )
