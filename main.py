@@ -744,18 +744,26 @@ async def get_sessions():
         logger.error(f"Get sessions error: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to retrieve session data")
 
+# # if __name__ == "__main__":
+# #     import uvicorn
+# #     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+# import os
+
+# PORT = int(os.environ.get("PORT", 8080))
+
 # if __name__ == "__main__":
 #     import uvicorn
-#     uvicorn.run(app, host="0.0.0.0", port=8000)
+#     uvicorn.run(app, host="0.0.0.0", port=PORT, log_level="info")
 
-import os
 
-PORT = int(os.environ.get("PORT", 8080))
 
+# Run the application if executed directly
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=PORT, log_level="info")
-
-
-
-
+    uvicorn.run(
+        app, 
+        host="0.0.0.0", 
+        port=PORT,
+        log_level="info"
+    )
