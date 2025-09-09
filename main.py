@@ -133,14 +133,14 @@ def root():
 
 
 # --- CORS Configuration ---
-origins = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "https://hg-medicura-ai.vercel.app",
-    "https://hg-medicura-ai-backend-production.up.railway.app",
-    "https://*.vercel.app",
-    "https://*.railway.app",
-]
+# origins = [
+#     "http://localhost:3000",
+#     "http://localhost:3001",
+#     "https://hg-medicura-ai.vercel.app",
+#     "https://hg-medicura-ai-backend-production.up.railway.app",
+#     "https://*.vercel.app",
+#     "https://*.railway.app",
+# ]
 
 # # CORS Configuration
 # app.add_middleware(
@@ -151,9 +151,24 @@ origins = [
 #     allow_headers=["*"],
 # )
 
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=origins,
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
+
+# Sirf ek CORS middleware use karein
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001", 
+        "https://hg-medicura-ai.vercel.app",
+        "https://*.vercel.app",
+        "https://*.railway.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
