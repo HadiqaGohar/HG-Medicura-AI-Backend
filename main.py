@@ -131,44 +131,17 @@ app = FastAPI(
 def root():
     return {"message": "HG-Medicura-AI Backend is running 🚀"}
 
+# CORS Configuration - SPECIFIC domains without wildcards
+origins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "https://hg-medicura-ai.vercel.app",  # Your Vercel frontend
+    "https://hg-medicura-ai-backend-production.up.railway.app",  # Your Railway backend
+]
 
-# --- CORS Configuration ---
-# origins = [
-#     "http://localhost:3000",
-#     "http://localhost:3001",
-#     "https://hg-medicura-ai.vercel.app",
-#     "https://hg-medicura-ai-backend-production.up.railway.app",
-#     "https://*.vercel.app",
-#     "https://*.railway.app",
-# ]
-
-# # CORS Configuration
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000").split(","),
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
-
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=origins,
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
-
-# Sirf ek CORS middleware use karein
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001", 
-        "https://hg-medicura-ai.vercel.app",
-        "https://*.vercel.app",
-        "https://*.railway.app",
-    ],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
