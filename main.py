@@ -133,9 +133,9 @@ def root():
 
 # CORS Configuration - SPECIFIC domains without wildcards
 origins = [
+    "https://hg-medicura-ai.vercel.app",  # Your Vercel frontend
     "http://localhost:3000",
     "http://localhost:3001",
-    "https://hg-medicura-ai.vercel.app",  # Your Vercel frontend
     "https://hg-medicura-ai-backend-production.up.railway.app",  # Your Railway backend
 ]
 
