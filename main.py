@@ -579,6 +579,14 @@ async def chatbot(request: ChatRequest):
             status_code=500,
             content=create_intelligent_response("I apologize for the difficulty. Please try rephrasing your question or consult a healthcare professional for immediate concerns.")
         )
+        # ad new ......
+@app.post("/api/chatbot/session/clear")
+async def clear_session(request: dict):
+    session_id = request.get("session_id")
+    if not session_id:
+        raise HTTPException(status_code=400, detail="Session ID is required")
+    # Implement session clearing logic (e.g., clear database entries for session_id)
+    return {"message": f"Session {session_id} cleared"}        
 
 @app.get("/api/test/vector-search")
 async def test_vector_search(query: str = "chest pain", specialty: str = "cardiology"):
