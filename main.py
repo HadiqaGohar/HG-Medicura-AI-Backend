@@ -137,6 +137,7 @@ origins = [
     "http://localhost:3000",
     "http://localhost:3001",
     "https://hg-medicura-ai.vercel.app",
+    "https://hg-medicura-ai-backend-production.up.railway.app",
     "https://*.vercel.app",
     "https://*.railway.app",
 ]
