@@ -21,6 +21,7 @@ import aiohttp
 
 
 
+
 # In main.py and cardiology_ai.py
 from utils import search_similar_cases, fallback_text_search
 # Import OpenAI Agents SDK components (assumed to be available)
@@ -468,6 +469,13 @@ class ReportTextInput(BaseModel):
 class ClearSessionRequest(BaseModel):
     session_id: Optional[str] = Field(None, max_length=100)
 
+# ......................Add new one................. #
+
+class SymptomAnalyzerRequest(BaseModel):
+    symptoms: List[str] = Field(..., min_items=1, max_items=20)
+    duration: Optional[str] = Field("not specified", max_length=100)
+    severity: Optional[str] = Field("not specified", max_length=100)
+
 
 #-----------------------FDA------------------------- #
 
@@ -486,6 +494,29 @@ async def test_fda_drug(drug_name: str = "aspirin"):
         return {"error": str(e), "success": False}
     
 #-----------------------FDA------------------------- #
+
+@app.post("/api/health/symptom-analyzer")
+async def symptom_analyzer(request: SymptomAnalyzerRequest):
+    """Analyze symptoms using the symptom_analyzer_agent."""
+    try:
+        symptoms_str = ", ".join(request.symptoms)
+        prompt = f"""
+        Analyze the following symptoms:
+        Symptoms: {symptoms_str}
+        Duration: {request.duration}
+        Severity: {request.severity}
+        """
+        context = {"specialty": "symptom"}
+        result = await run_agent_with_thinking(symptom_analyzer_agent, prompt, context)
+        return JSONResponse(content=result)
+    except Exception as e:
+        logger.error(f"Symptom analyzer error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to analyze symptoms")
+
+
+
+
+# -----------------End new one .....................#
 
 
 @app.post("/api/chatbot")
