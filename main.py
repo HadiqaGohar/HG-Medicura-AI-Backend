@@ -482,6 +482,10 @@ class DrugInteractionRequest(BaseModel):
     gender: Optional[str] = None
     existing_conditions: Optional[List[str]] = []
     other_medications: Optional[List[str]] = []
+    
+class MedicalTermRequest(BaseModel):
+    term: str = Field(..., min_length=1)
+    language: Optional[str] = "en"    
 
 #-----------------------FDA------------------------- #
 
@@ -521,28 +525,6 @@ async def symptom_analyzer(request: SymptomAnalyzerRequest):
         logger.error(f"Symptom analyzer error: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to analyze symptoms")
 
-# @app.post("/api/health/drug-interactions")
-# async def drug_interactions(request: DrugInteractionRequest):
-#     try:
-#         medications_str = ", ".join(request.medications)
-#         prompt = f"Analyze drug interactions for: Medications: {medications_str}"
-#         if request.age:
-#             prompt += f", Age: {request.age}"
-#         if request.gender:
-#             prompt += f", Gender: {request.gender}"
-#         if request.existing_conditions:
-#             prompt += f", Conditions: {', '.join(request.existing_conditions)}"
-#         if request.other_medications:
-#             prompt += f", Other Medications: {', '.join(request.other_medications)}"
-#         prompt = prompt.strip()
-#         context = {"specialty": "drug_interaction"}
-#         result = await run_agent_with_thinking(drug_interaction_agent, prompt, context)
-#         logger.info(f"Drug interaction raw response: {result[:200]}...")
-#         return JSONResponse(content=result)
-#     except Exception as e:
-#         logger.error(f"Drug interaction error: {str(e)}")
-#         raise HTTPException(status_code=500, detail="Failed to check drug interactions")
-
 @app.post("/api/health/drug-interactions")
 async def drug_interactions(request: DrugInteractionRequest):
     try:
@@ -571,7 +553,32 @@ async def drug_interactions(request: DrugInteractionRequest):
         logger.error(f"Drug interaction error: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to check drug interactions")
 
+@app.post("/api/health/medical-term")
+async def medical_term(request: MedicalTermRequest):
+    try:
+        prompt = (
+            f"Explain the medical term '{request.term}' in {request.language}. "
+            f"Provide a JSON response with the following structure: "
+            f"{{'term': the term, 'pronunciation': phonetic spelling, "
+            f"'summary': brief definition, 'detailed_analysis': concise explanation, "
+            f"'key_points': array of bullet points, 'related_terms': array of related terms, "
+            f"'recommendations': actionable advice or 'None', "
+            f"'disclaimer': disclaimer text, 'type': 'medical_term'}}."
+        )
+        context = {"specialty": "medical_term"}
 
+        # Call agent
+        result = await run_agent_with_thinking(medical_term_agent, prompt, context)
+        
+        # Log response safely
+        result_str = str(result) if not isinstance(result, str) else result
+        logger.info(f"Medical term raw response: {result_str[:200]}...")
+        
+        return JSONResponse(content=result)
+    except Exception as e:
+        logger.error(f"Medical term error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to explain medical term")
+        
 # -----------------End new one .....................#
 
 
