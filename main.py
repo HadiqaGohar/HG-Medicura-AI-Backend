@@ -487,9 +487,19 @@ class MedicalTermRequest(BaseModel):
     term: str = Field(..., min_length=1)
     language: Optional[str] = "en"    
 
-class ReportSummaryRequest(BaseModel):
-    text: str = Field(..., min_length=1)
-    language: Optional[str] = "en"
+# class ReportSummaryRequest(BaseModel):
+#     text: str = Field(..., min_length=1)
+#     language: Optional[str] = "en"
+
+class ReportSummaryResponse(BaseModel):
+    summary: str
+    detailed_analysis: str
+    key_findings: List[str]
+    recommendations: List[str]
+    next_steps: List[str]
+    disclaimer: str
+    type: str
+    error: Optional[str] = None
 
 #-----------------------FDA------------------------- #
 
@@ -583,11 +593,71 @@ async def medical_term(request: MedicalTermRequest):
         logger.error(f"Medical term error: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to explain medical term")
 
-@app.post("/api/health/report-summarize")
-async def report_summarize(request: ReportSummaryRequest):
+# @app.post("/api/health/report-summarize")
+# async def report_summarize(request: ReportSummaryRequest):
+#     try:
+#         prompt = (
+#             f"Summarize the following medical report text in {request.language}: {request.text}. "
+#             f"Provide a JSON response with the following structure: "
+#             f"{{'summary': brief summary, 'detailed_analysis': detailed explanation, "
+#             f"'key_findings': array of findings, 'recommendations': array of recommendations, "
+#             f"'next_steps': array of next steps, 'disclaimer': disclaimer text, "
+#             f"'type': report type (e.g., 'Lab Results', 'Imaging Reports', 'Doctor's Notes', 'Discharge Summaries')}}."
+#         )
+#         context = {"specialty": "report_analyzer"}
+
+#         # Call agent
+#         result = await run_agent_with_thinking(report_analyzer_agent, prompt, context)
+        
+#         # Log response safely
+#         result_str = str(result) if not isinstance(result, str) else result
+#         logger.info(f"Report summary raw response: {result_str[:200]}...")
+        
+#         return JSONResponse(content=result)
+#     except Exception as e:
+#         logger.error(f"Report summary error: {str(e)}")
+#         raise HTTPException(status_code=500, detail="Failed to summarize report")
+
+
+async def extract_pdf_text(file: UploadFile) -> str:
     try:
+        # Ensure the file is a PDF
+        if file.content_type != 'application/pdf':
+            logger.error(f"Invalid file type: {file.content_type}")
+            raise HTTPException(status_code=400, detail="Only PDF files are supported")
+        
+        # Read and extract text from PDF
+        with pdfplumber.open(file.file) as pdf:
+            text = ""
+            for page in pdf.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "\n"
+            if not text.strip():
+                logger.warning("No text extracted from PDF")
+                raise HTTPException(status_code=400, detail="No readable text found in PDF")
+        return text
+    except Exception as e:
+        logger.error(f"PDF extraction error: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Failed to extract text from PDF: {str(e)}")
+
+@app.post("/api/health/report-summarize", response_model=ReportSummaryResponse)
+async def report_summarize(
+    text: Optional[str] = Form(None),
+    file: Optional[UploadFile] = File(None),
+    language: Optional[str] = Form("en")
+):
+    try:
+        report_text = text or ""
+        if file:
+            report_text = await extract_pdf_text(file)
+
+        if not report_text.strip():
+            logger.error("No valid report text provided")
+            raise HTTPException(status_code=400, detail="Report text or valid PDF file is required")
+
         prompt = (
-            f"Summarize the following medical report text in {request.language}: {request.text}. "
+            f"Summarize the following medical report text in {language}: {report_text}. "
             f"Provide a JSON response with the following structure: "
             f"{{'summary': brief summary, 'detailed_analysis': detailed explanation, "
             f"'key_findings': array of findings, 'recommendations': array of recommendations, "
@@ -599,14 +669,43 @@ async def report_summarize(request: ReportSummaryRequest):
         # Call agent
         result = await run_agent_with_thinking(report_analyzer_agent, prompt, context)
         
-        # Log response safely
-        result_str = str(result) if not isinstance(result, str) else result
-        logger.info(f"Report summary raw response: {result_str[:200]}...")
-        
-        return JSONResponse(content=result)
+        # Validate and format response
+        if not isinstance(result, dict):
+            logger.error(f"Agent returned non-dict response: {type(result)}")
+            raise HTTPException(status_code=500, detail="Invalid agent response format")
+
+        # Ensure all required fields are present
+        formatted_result = {
+            "summary": result.get("summary", "No summary available."),
+            "detailed_analysis": result.get("detailed_analysis", result.get("summary", "No detailed analysis available.")),
+            "key_findings": result.get("key_findings", []),
+            "recommendations": result.get("recommendations", []),
+            "next_steps": result.get("next_steps", []),
+            "disclaimer": result.get("disclaimer", f"This information is educational only and not medical advice in {language}."),
+            "type": result.get("type", "Unknown"),
+            "error": result.get("error", None)
+        }
+
+        logger.info(f"Report summary response: {str(formatted_result)[:200]}...")
+        return JSONResponse(content=formatted_result)
+    except HTTPException as e:
+        logger.error(f"HTTP error in report summarize: {str(e)}")
+        raise e
     except Exception as e:
-        logger.error(f"Report summary error: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to summarize report")
+        logger.error(f"Unexpected error in report summarize: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "error": "Failed to summarize report",
+                "summary": "",
+                "detailed_analysis": "Unable to summarize the report. Please try again or consult a healthcare provider.",
+                "key_findings": [],
+                "recommendations": [],
+                "next_steps": [],
+                "disclaimer": f"This information is educational only and not medical advice in {language}.",
+                "type": "Unknown"
+            }
+        )
         
 # -----------------End new one .....................#
 
