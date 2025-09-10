@@ -487,6 +487,10 @@ class MedicalTermRequest(BaseModel):
     term: str = Field(..., min_length=1)
     language: Optional[str] = "en"    
 
+class ReportSummaryRequest(BaseModel):
+    text: str = Field(..., min_length=1)
+    language: Optional[str] = "en"
+
 #-----------------------FDA------------------------- #
 
 @app.get("/api/test/fda-drug")
@@ -578,6 +582,31 @@ async def medical_term(request: MedicalTermRequest):
     except Exception as e:
         logger.error(f"Medical term error: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to explain medical term")
+
+@app.post("/api/health/report-summarize")
+async def report_summarize(request: ReportSummaryRequest):
+    try:
+        prompt = (
+            f"Summarize the following medical report text in {request.language}: {request.text}. "
+            f"Provide a JSON response with the following structure: "
+            f"{{'summary': brief summary, 'detailed_analysis': detailed explanation, "
+            f"'key_findings': array of findings, 'recommendations': array of recommendations, "
+            f"'next_steps': array of next steps, 'disclaimer': disclaimer text, "
+            f"'type': report type (e.g., 'Lab Results', 'Imaging Reports', 'Doctor's Notes', 'Discharge Summaries')}}."
+        )
+        context = {"specialty": "report_analyzer"}
+
+        # Call agent
+        result = await run_agent_with_thinking(report_analyzer_agent, prompt, context)
+        
+        # Log response safely
+        result_str = str(result) if not isinstance(result, str) else result
+        logger.info(f"Report summary raw response: {result_str[:200]}...")
+        
+        return JSONResponse(content=result)
+    except Exception as e:
+        logger.error(f"Report summary error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to summarize report")
         
 # -----------------End new one .....................#
 
