@@ -1,4 +1,6 @@
 from agents import Agent
+from pydantic import BaseModel, Field
+from typing import List, Optional
 
 class SymptomAnalyzerRequest(BaseModel):
     symptoms: List[str] = Field(..., min_items=1, max_items=20)
