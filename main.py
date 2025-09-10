@@ -4,7 +4,7 @@ import os
 import json
 import asyncio
 from datetime import datetime
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -18,6 +18,9 @@ import re
 import pymysql
 import google.generativeai as genai 
 import aiohttp
+# main.py
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+import pdfplumber
 
 
 
@@ -501,6 +504,8 @@ class ReportSummaryResponse(BaseModel):
     type: str
     error: Optional[str] = None
 
+
+
 #-----------------------FDA------------------------- #
 
 @app.get("/api/test/fda-drug")
@@ -593,40 +598,15 @@ async def medical_term(request: MedicalTermRequest):
         logger.error(f"Medical term error: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to explain medical term")
 
-# @app.post("/api/health/report-summarize")
-# async def report_summarize(request: ReportSummaryRequest):
-#     try:
-#         prompt = (
-#             f"Summarize the following medical report text in {request.language}: {request.text}. "
-#             f"Provide a JSON response with the following structure: "
-#             f"{{'summary': brief summary, 'detailed_analysis': detailed explanation, "
-#             f"'key_findings': array of findings, 'recommendations': array of recommendations, "
-#             f"'next_steps': array of next steps, 'disclaimer': disclaimer text, "
-#             f"'type': report type (e.g., 'Lab Results', 'Imaging Reports', 'Doctor's Notes', 'Discharge Summaries')}}."
-#         )
-#         context = {"specialty": "report_analyzer"}
-
-#         # Call agent
-#         result = await run_agent_with_thinking(report_analyzer_agent, prompt, context)
-        
-#         # Log response safely
-#         result_str = str(result) if not isinstance(result, str) else result
-#         logger.info(f"Report summary raw response: {result_str[:200]}...")
-        
-#         return JSONResponse(content=result)
-#     except Exception as e:
-#         logger.error(f"Report summary error: {str(e)}")
-#         raise HTTPException(status_code=500, detail="Failed to summarize report")
-
 
 async def extract_pdf_text(file: UploadFile) -> str:
     try:
-        # Ensure the file is a PDF
+        # Validate file type
         if file.content_type != 'application/pdf':
             logger.error(f"Invalid file type: {file.content_type}")
             raise HTTPException(status_code=400, detail="Only PDF files are supported")
         
-        # Read and extract text from PDF
+        # Extract text from PDF
         with pdfplumber.open(file.file) as pdf:
             text = ""
             for page in pdf.pages:
@@ -634,11 +614,12 @@ async def extract_pdf_text(file: UploadFile) -> str:
                 if page_text:
                     text += page_text + "\n"
             if not text.strip():
-                logger.warning("No text extracted from PDF")
+                logger.warning(f"No text extracted from PDF: {file.filename}")
                 raise HTTPException(status_code=400, detail="No readable text found in PDF")
+        logger.info(f"Extracted text from PDF: {file.filename} ({len(text)} characters)")
         return text
     except Exception as e:
-        logger.error(f"PDF extraction error: {str(e)}")
+        logger.error(f"PDF extraction error for {file.filename}: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Failed to extract text from PDF: {str(e)}")
 
 @app.post("/api/health/report-summarize", response_model=ReportSummaryResponse)
@@ -669,12 +650,12 @@ async def report_summarize(
         # Call agent
         result = await run_agent_with_thinking(report_analyzer_agent, prompt, context)
         
-        # Validate and format response
+        # Validate response
         if not isinstance(result, dict):
             logger.error(f"Agent returned non-dict response: {type(result)}")
             raise HTTPException(status_code=500, detail="Invalid agent response format")
 
-        # Ensure all required fields are present
+        # Ensure all required fields
         formatted_result = {
             "summary": result.get("summary", "No summary available."),
             "detailed_analysis": result.get("detailed_analysis", result.get("summary", "No detailed analysis available.")),
@@ -706,7 +687,6 @@ async def report_summarize(
                 "type": "Unknown"
             }
         )
-        
 # -----------------End new one .....................#
 
 
