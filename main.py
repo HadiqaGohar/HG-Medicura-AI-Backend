@@ -521,6 +521,28 @@ async def symptom_analyzer(request: SymptomAnalyzerRequest):
         logger.error(f"Symptom analyzer error: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to analyze symptoms")
 
+# @app.post("/api/health/drug-interactions")
+# async def drug_interactions(request: DrugInteractionRequest):
+#     try:
+#         medications_str = ", ".join(request.medications)
+#         prompt = f"Analyze drug interactions for: Medications: {medications_str}"
+#         if request.age:
+#             prompt += f", Age: {request.age}"
+#         if request.gender:
+#             prompt += f", Gender: {request.gender}"
+#         if request.existing_conditions:
+#             prompt += f", Conditions: {', '.join(request.existing_conditions)}"
+#         if request.other_medications:
+#             prompt += f", Other Medications: {', '.join(request.other_medications)}"
+#         prompt = prompt.strip()
+#         context = {"specialty": "drug_interaction"}
+#         result = await run_agent_with_thinking(drug_interaction_agent, prompt, context)
+#         logger.info(f"Drug interaction raw response: {result[:200]}...")
+#         return JSONResponse(content=result)
+#     except Exception as e:
+#         logger.error(f"Drug interaction error: {str(e)}")
+#         raise HTTPException(status_code=500, detail="Failed to check drug interactions")
+
 @app.post("/api/health/drug-interactions")
 async def drug_interactions(request: DrugInteractionRequest):
     try:
@@ -536,8 +558,14 @@ async def drug_interactions(request: DrugInteractionRequest):
             prompt += f", Other Medications: {', '.join(request.other_medications)}"
         prompt = prompt.strip()
         context = {"specialty": "drug_interaction"}
+
+        # Call agent
         result = await run_agent_with_thinking(drug_interaction_agent, prompt, context)
-        logger.info(f"Drug interaction raw response: {result[:200]}...")
+        
+        # Log response safely
+        result_str = str(result) if not isinstance(result, str) else result
+        logger.info(f"Drug interaction raw response: {result_str[:200]}...")
+        
         return JSONResponse(content=result)
     except Exception as e:
         logger.error(f"Drug interaction error: {str(e)}")
